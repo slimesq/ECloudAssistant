@@ -60,7 +60,10 @@ bool TcpSocket::Bind(std::string ip, short port)
     }
     struct sockaddr_in addr = {0};
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(ip.c_str());
+    if (InetPtonA(AF_INET, ip.c_str(), &addr.sin_addr) != 1)
+    {
+        return false;
+    }
     addr.sin_port = htons(port);
 
     if (::bind(sockfd_, (struct sockaddr*)&addr, sizeof(addr)) == -1)
@@ -89,10 +92,13 @@ bool TcpSocket::Connect(std::string ip, uint16_t port, int timeout)
     bool is_connect = true;
 
     struct sockaddr_in addr = {0};
-    socklen_t len = sizeof(addr);
+    int const len{static_cast<int>(sizeof(addr))};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
-    addr.sin_addr.s_addr = inet_addr(ip.c_str());
+    if (InetPtonA(AF_INET, ip.c_str(), &addr.sin_addr) != 1)
+    {
+        return false;
+    }
 
     //开始连接
     if (::connect(sockfd_, (struct sockaddr*)&addr, len) == -1)
@@ -106,7 +112,7 @@ bool TcpSocket::Connect(std::string ip, uint16_t port, int timeout)
 int TcpSocket::Accept()
 {
     struct sockaddr_in addr = {0};
-    socklen_t addrlen = sizeof(addr);
+    int addrlen{static_cast<int>(sizeof(addr))};
     return ::accept(sockfd_, (struct sockaddr*)&addr, &addrlen);
 }
 

@@ -131,8 +131,6 @@ AVPacketPtr AudioEncoder::Encode(uint8_t const* pcm, int samples)
     }
 
     AVPacketPtr av_packet(av_packet_alloc(), [](AVPacket* ptr) { av_packet_free(&ptr); });
-    //初始化这个packet
-    av_init_packet(av_packet.get());
     //开始接收packet
     ret = avcodec_receive_packet(codecContext_, av_packet.get());
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)

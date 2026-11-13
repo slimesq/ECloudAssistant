@@ -3,6 +3,7 @@
 #include <QThread>
 #include <memory>
 #include <mutex>
+#include <vector>
 struct AVFrame;
 struct AVPacket;
 struct AVInputFormat;

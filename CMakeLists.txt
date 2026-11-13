@@ -70,6 +70,11 @@ target_include_directories(ECloudAssistant PRIVATE
     UI/title UI/center UI/list UI/tool Net Codec Pusher Pusher/capture Pusher/rtmp
     Puller/UI Puller/Render
     "${FFMPEG_INCLUDE_DIR}")
+target_compile_definitions(ECloudAssistant PRIVATE WIN32_LEAN_AND_MEAN)
+if(MSVC)
+    target_compile_options(ECloudAssistant PRIVATE /utf-8)
+    target_compile_definitions(ECloudAssistant PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
 target_link_libraries(ECloudAssistant PRIVATE
     Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui
     Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network

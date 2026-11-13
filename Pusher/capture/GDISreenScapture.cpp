@@ -5,9 +5,12 @@ extern "C"
 #include <libavcodec/avcodec.h>
 #include <libavdevice/avdevice.h>
 #include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
 }
 #include <QDebug>
+#include <chrono>
+#include <thread>
 
 GDIScreenCapture::GDIScreenCapture()
     : stop_(false),
@@ -141,11 +144,7 @@ bool GDIScreenCapture::Close()
     {
         StopCapture();
     }
-    if (codec_context_)
-    {
-        avcodec_close(codec_context_);
-        codec_context_ = nullptr;
-    }
+    avcodec_free_context(&this->codec_context_);
     if (format_context_)
     {
         avformat_close_input(&format_context_);
@@ -258,19 +257,39 @@ bool GDIScreenCapture::Decode(AVFrame* av_frame, AVPacket* av_packet)
         {
             return false;
         }
-        //接收成功，需要更新帧
-        std::lock_guard<std::mutex> lock(mutex_);
-        frame_size_ = av_frame->pkt_size;
-        rgba_frame_.reset(new uint8_t[frame_size_], std::default_delete<uint8_t[]>());
-        width_ = av_frame->width;
-        height_ = av_frame->height;
-        //将frame数据拷贝出去
-        for (uint32_t i = 0; i < height_; i++)
+        // 下游编码器使用 BGRA；gdigrab 的 BGR0 具有相同的四字节颜色布局。
+        AVPixelFormat const frameFormat{static_cast<AVPixelFormat>(av_frame->format)};
+        if (frameFormat != AV_PIX_FMT_BGRA && frameFormat != AV_PIX_FMT_BGR0)
         {
-            memcpy(rgba_frame_.get() + i * width_ * 4,
-                   av_frame->data[0] + i * av_frame->linesize[0],
-                   av_frame->linesize[0]);
+            av_frame_unref(av_frame);
+            return false;
         }
+        int const frameSize{av_image_get_buffer_size(frameFormat, av_frame->width, av_frame->height, 1)};
+        if (frameSize <= 0)
+        {
+            av_frame_unref(av_frame);
+            return false;
+        }
+        framPtr frameData{new uint8_t[frameSize], std::default_delete<uint8_t[]>{}};
+        // 按实际像素格式打包，移除源行的 padding，并支持负 linesize。
+        int const copiedSize{av_image_copy_to_buffer(frameData.get(),
+                                                    frameSize,
+                                                    av_frame->data,
+                                                    av_frame->linesize,
+                                                    frameFormat,
+                                                    av_frame->width,
+                                                    av_frame->height,
+                                                    1)};
+        if (copiedSize < 0)
+        {
+            av_frame_unref(av_frame);
+            return false;
+        }
+        std::lock_guard<std::mutex> lock{this->mutex_};
+        this->frame_size_ = static_cast<quint32>(copiedSize);
+        this->rgba_frame_ = frameData;
+        this->width_ = static_cast<quint32>(av_frame->width);
+        this->height_ = static_cast<quint32>(av_frame->height);
         av_frame_unref(av_frame);
     }
     return true;
