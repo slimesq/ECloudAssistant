@@ -17,7 +17,7 @@
 
 你此前没有 RTMP 基础，应先完成 ENET [阶段八共同基础](https://github.com/slimesq/ENET/blob/main/docs/项目学习规划.md#rtmp-foundation)中的简单握手、Message/Chunk、三个 ID、AMF0 和离线样例。已完成的部分直接复用，不重复编写握手器、AMF 编码器或另搭服务。
 
-AVC 即 H.264。本讲再补客户端实际使用的发布应答、AVC/AAC 负载与发送条件。原始图像、PCM、NAL、编码配置和 Packet 寿命复用[客户端阶段六](阶段六屏幕音频采集与编码学习讲义.md)；TCP 立即写、可写续发和队列复用[阶段四](阶段四Winsock与客户端事件循环学习讲义.md)。
+AVC 即 H.264。本讲再补客户端实际使用的发布应答、AVC/AAC 负载与发送条件。原始图像、PCM、NAL、编码配置和 Packet 寿命复用[客户端阶段六](阶段06_屏幕音频采集与编码学习讲义.md)；TCP 立即写、可写续发和队列复用[阶段四](阶段04_Winsock与客户端事件循环学习讲义.md)。
 
 ### 1.2 源码入口
 
